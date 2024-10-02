@@ -62,8 +62,8 @@ app.post('/create-zoom-meeting', async (req, res) => {
         res.status(500).send('Failed to create Zoom meeting');
     }
 });
-
+module.exports = app;
 // Start the server
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+// app.listen(port, () => {
+//     console.log(`Server running on port ${port}`);
+// });
