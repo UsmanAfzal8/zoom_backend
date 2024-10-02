@@ -1,14 +1,15 @@
 const express = require('express');
-const serverless = require('serverless-http'); // Import serverless-http
+const serverless = require('serverless-http');
 const axios = require('axios');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+// If using environment variables
+// require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Zoom API credentials (hardcoded)
 const clientId = 'exd8bjRBTYSxXxyxqsmMw';
 const clientSecret = 'F95ktGMTTydfxiiT1fdGCxbVwiK9Rgj1';
 const accountId = 'Txr37ACvRF2XxNrYh7wXAg';
@@ -16,16 +17,17 @@ const zoomApiBaseUrl = 'https://api.zoom.us';
 const zoomAuthUrl = `${zoomApiBaseUrl}/oauth/token`;
 const zoomMeetingUrl = 'https://api.zoom.us/v2/users/me/meetings';
 
+const router = express.Router();
+
 // Endpoint to fetch Zoom access token
-app.post('/zoom-token', async (req, res) => {
+router.post('/zoom-token', async (req, res) => {
   try {
     const response = await axios.post(
       `${zoomAuthUrl}?grant_type=account_credentials&account_id=${accountId}`,
       {},
       {
         headers: {
-          'Authorization':
-            'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
+          Authorization: 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
         },
       }
     );
@@ -37,7 +39,7 @@ app.post('/zoom-token', async (req, res) => {
 });
 
 // Endpoint to create a Zoom meeting
-app.post('/create-zoom-meeting', async (req, res) => {
+router.post('/create-zoom-meeting', async (req, res) => {
   const { accessToken, date, time } = req.body;
 
   try {
@@ -66,13 +68,20 @@ app.post('/create-zoom-meeting', async (req, res) => {
 
     res.json(response.data);
   } catch (error) {
-    console.error(
-      'Error creating Zoom meeting:',
-      error.response ? error.response.data : error.message
-    );
+    console.error('Error creating Zoom meeting:', error.response ? error.response.data : error.message);
     res.status(500).send('Failed to create Zoom meeting');
   }
 });
 
-// Do not start the server; Vercel handles it
-module.exports = serverless(app); // Export the app using serverless-http
+app.use('/api', router); // Mount the router at /api
+
+// For local development
+if (require.main === module) {
+  const port = 3000;
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+} else {
+  // For Vercel
+  module.exports = serverless(app);
+}
